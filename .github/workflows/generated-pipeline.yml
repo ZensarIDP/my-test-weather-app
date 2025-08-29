@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: Deploy to Google Cloud Run
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -37,17 +37,17 @@ jobs:
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and push Docker image
+      - name: Build and Push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ github.repository }}:${{ github.sha }}
+          tags: gcr.io/${{ secrets.GCP_PROJECT_ID }}/app:${{ github.sha }}
 
       - name: Deploy to Google Cloud Run
         run: |
-          gcloud run deploy ${{ github.repository }} \
-            --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ github.repository }}:${{ github.sha }} \
+          gcloud run deploy app \
+            --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/app:${{ github.sha }} \
             --platform managed \
             --region ${{ secrets.GCP_REGION }} \
             --allow-unauthenticated
