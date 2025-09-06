@@ -1,0 +1,10 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: my-test-weather-app
+  annotations:
+    github.com/project-slug: ZensarIDP/my-test-weather-app
+spec:
+  type: other
+  lifecycle: unknown
+  owner: developers
