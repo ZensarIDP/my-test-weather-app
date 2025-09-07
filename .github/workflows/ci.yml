@@ -17,12 +17,21 @@ jobs:
       uses: google-github-actions/auth@v1
       with:
         credentials_json: ${{ secrets.GCP_SA_KEY }}
+        create_credentials_file: true
+        export_environment_variables: true
+        cleanup_credentials: true
+        access_token_lifetime: 3600s
+        access_token_scopes: https://www.googleapis.com/auth/cloud-platform
+        retries: 3
+        backoff: 250
+        id_token_include_email: false
 
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v1
       with:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
-        install_components: 'artifactregistry'
+        install_components: 'artifact-registry'
+        version: 'latest'
 
     - name: Configure Docker for Artifact Registry
       run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
