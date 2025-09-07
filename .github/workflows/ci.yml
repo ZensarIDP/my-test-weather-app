@@ -33,13 +33,18 @@ jobs:
         version: 'latest'
         skip_install: false
 
+    - name: Debug Environment Variables
+      run: |
+        echo "GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}"
+        echo "GCP_REGION: ${{ secrets.GCP_REGION }}"
+
     - name: Configure Docker for Artifact Registry
       run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
 
     - name: Check and Create Artifact Registry Repository
       run: |
         REPO_NAME=my-test-weather-app
-        if ! gcloud artifacts repositories describe $REPO_NAME --location=${{ secrets.GCP_REGION }} >/dev/null 2>&1; then
+        if ! gcloud artifacts repositories describe $REPO_NAME --location=${{ secrets.GCP_REGION }} --project=${{ secrets.GCP_PROJECT_ID }} >/dev/null 2>&1; then
           gcloud artifacts repositories create $REPO_NAME --repository-format=docker --location=${{ secrets.GCP_REGION }} --project=${{ secrets.GCP_PROJECT_ID }}
         fi
 
