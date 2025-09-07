@@ -30,8 +30,14 @@ jobs:
       uses: google-github-actions/setup-gcloud@v1
       with:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
-        install_components: 'artifact-registry'
+        install_components: 'gcloud'
         version: 'latest'
+        skip_install: false
+
+    - name: Install Artifact Registry Component
+      run: |
+        gcloud components update --quiet
+        gcloud components install artifact-registry --quiet
 
     - name: Configure Docker for Artifact Registry
       run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
@@ -39,21 +45,20 @@ jobs:
     - name: Check and Create Artifact Registry Repository
       run: |
         REPO_NAME=my-test-weather-app
-        if ! gcloud artifacts repositories describe $REPO_NAME --location=${{ secrets.GCP_REGION }} --project=${{ secrets.GCP_PROJECT_ID }} >/dev/null 2>&1; then
-          gcloud artifacts repositories create $REPO_NAME --repository-format=docker --location=${{ secrets.GCP_REGION }} --project=${{ secrets.GCP_PROJECT_ID }}
+        if ! gcloud artifacts repositories describe $REPO_NAME --location=${{ secrets.GCP_REGION }} >/dev/null 2>&1; then
+          gcloud artifacts repositories create $REPO_NAME --repository-format=docker --location=${{ secrets.GCP_REGION }}
         fi
 
     - name: Build Docker image
       run: |
-        IMAGE_NAME=${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/my-test-weather-app/weather-gui-app
+        IMAGE_NAME=${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/my-test-weather-app/my-test-weather-app
         docker build -t $IMAGE_NAME .
         docker push $IMAGE_NAME
 
     - name: Deploy to Cloud Run
       run: |
         gcloud run deploy my-test-weather-app \
-          --image=${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/my-test-weather-app/weather-gui-app \
-          --platform=managed \
+          --image=${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/my-test-weather-app/my-test-weather-app \
           --region=${{ secrets.GCP_REGION }} \
-          --allow-unauthenticated \
-          --project=${{ secrets.GCP_PROJECT_ID }}
+          --platform=managed \
+          --allow-unauthenticated
