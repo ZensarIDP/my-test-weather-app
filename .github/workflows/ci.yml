@@ -22,7 +22,7 @@ jobs:
       uses: google-github-actions/setup-gcloud@v1
       with:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
-        install_components: 'gcloud'
+        install_components: 'artifactregistry'
 
     - name: Configure Docker for Artifact Registry
       run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
@@ -30,26 +30,21 @@ jobs:
     - name: Check and Create Artifact Registry Repository
       run: |
         REPO_NAME=my-test-weather-app
-        if ! gcloud artifacts repositories describe $REPO_NAME --location=${{ secrets.GCP_REGION }} >/dev/null 2>&1; then
-          gcloud artifacts repositories create $REPO_NAME --repository-format=docker --location=${{ secrets.GCP_REGION }}
+        if ! gcloud artifacts repositories describe $REPO_NAME --location=${{ secrets.GCP_REGION }} --project=${{ secrets.GCP_PROJECT_ID }} >/dev/null 2>&1; then
+          gcloud artifacts repositories create $REPO_NAME --repository-format=docker --location=${{ secrets.GCP_REGION }} --project=${{ secrets.GCP_PROJECT_ID }}
         fi
 
     - name: Build Docker image
       run: |
-        IMAGE_NAME=${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/my-test-weather-app/my-test-weather-app
+        IMAGE_NAME=${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/my-test-weather-app/weather-gui-app
         docker build -t $IMAGE_NAME .
-
-    - name: Push Docker image to Artifact Registry
-      run: |
-        IMAGE_NAME=${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/my-test-weather-app/my-test-weather-app
         docker push $IMAGE_NAME
 
     - name: Deploy to Cloud Run
       run: |
-        IMAGE_NAME=${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/my-test-weather-app/my-test-weather-app
         gcloud run deploy my-test-weather-app \
-          --image $IMAGE_NAME \
-          --region ${{ secrets.GCP_REGION }} \
-          --platform managed \
+          --image=${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/my-test-weather-app/weather-gui-app \
+          --platform=managed \
+          --region=${{ secrets.GCP_REGION }} \
           --allow-unauthenticated \
-          --port 3001
+          --project=${{ secrets.GCP_PROJECT_ID }}
